@@ -1,5 +1,5 @@
-# Flash-Muon: An Efficient Implementation of Muon Optimzer
-This repo implements an efficient version of Muon optimizer through a customized CUDA kernel for matmuls in Newton-Schulz iterations.
+# Flash-Muon: An Efficient Implementation of Muon Optimizer
+This repo implements an efficient version of Muon optimizer through a customized CUDA kernel for (large-dim) matmuls in Newton-Schulz iterations.
 
 
 ## Installation
@@ -104,7 +104,7 @@ The [CUDA code](https://github.com/nil0x9/flash-muon/blob/cuda_dev/csrc/matmul_t
 ```
 @misc{lin2025flash,
   author       = {Tianyang Lin},
-  title        = {Flash-Muon: An Efficient Implementation of Muon Optimzer},
+  title        = {Flash-Muon: An Efficient Implementation of Muon Optimizer},
   year         = {2025},
   url          = {https://github.com/nil0x9/flash-muon}
 }
