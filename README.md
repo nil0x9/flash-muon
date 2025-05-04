@@ -10,7 +10,8 @@ git clone --recurse-submodules https://github.com/nil0x9/flash-muon.git
 pip install -e ./
 ```
 
-Current implementation requires archs `>= sm_80` (Ampere and above).
+> **Note**: The current CUDA implementation remains suboptimally tuned for the latest hardware architectures. To maximize compatibility with modern devices, we have implemented an equivalent version using [triton-lang](https://github.com/triton-lang/triton) and make it default implementation. The original CUDA version could still be found in `cuda_dev` branch (we'll keep working on it).
+
 
 ## Usage
 
@@ -37,7 +38,7 @@ for opt in optimizers:
 In case anyone wants to cook their own optimizer, we also expose the following APIs:
 
 - `fast_newtonschulz(torch.Tensor x, int steps)`: The Newton-Schulz iteration as used in Muon, with symmetric matmul's replaced with our faster version.
-- `matmul_transpose(torch.Tensor x)`: The core function used to compute `x@x.T` fast. Use it when the matrix has a large dimension (say `>=4096`).
+- `matmul_transpose(torch.Tensor x)`: The core function used to compute `x@x.T` fast.
 - `matmul_transpose_assign(torch.Tensor x, torch.Tensor y)`: The same functionality as above but copies the result to the second argument Tensor instead of creating and return a new one.
 
 
@@ -66,20 +67,37 @@ The intuition is very simple - We only calculate upper triangular parts of the r
 
 This design effectively saves almost half the computation in GEMM (depending on the size of the matrix).
 
-In our test (RTX 4090) this simple mechanism saves about half the compute time on matrices of dimension 8192. Do note that the kernel is slower than native implementation for they involves relatively small number of thread blocks and thus cannot exploit the block-wise early exiting:
 
+We test the compute time of `matmul_transpose` as well as the adapted Newton-Schulz iteration throughout different devices. 
 ![design of matmul_transpose kernel](assets/benchmark.png)
+
+We list the detailed benchmark result (ms) for `matmul_transpose` as follows:
+| device | dim  | flash  | torch  | compiled |
+|--------|------|--------|--------|----------------|
+| H800 | 1024 | 0.0124 | 0.0112 | 0.0107 |
+| H800 | 2048 | 0.0322 | 0.0384 | 0.0384 |
+| H800 | 4096 | 0.1838 | 0.2955 | 0.3000 |
+| H800 | 8192 | 1.4528 | 2.2643 | 2.2804 |
+| H20 | 1024 | 0.0164 | 0.0275 | 0.0275 |
+| H20 | 2048 | 0.0746 | 0.1588 | 0.1587 |
+| H20 | 4096 | 0.5068 | 1.0431 | 1.0431 |
+| H20 | 8192 | 3.9265 | 7.9691 | 7.9508 |
+| A100 | 1024 | 0.0191 | 0.0228 | 0.0232 |
+| A100 | 2048 | 0.0689 | 0.1166 | 0.1164 |
+| A100 | 4096 | 0.3733 | 0.6644 | 0.6649 |
+| A100 | 8192 | 2.9815 | 5.1604 | 5.2858 |
+| 4090 | 1024 | 0.0208 | 0.0213 | 0.0208 |
+| 4090 | 2048 | 0.0823 | 0.1098 | 0.1095 |
+| 4090 | 4096 | 0.5249 | 0.8535 | 0.8546 |
+| 4090 | 8192 | 3.5689 | 6.7631 | 6.7869 |
+
 
 
 ## Acknowledgement
 
 The idea of boosting Muon by customizing a CUDA kernel for `matmul(x, x.T)` was originally proposed by Laker Newhouse et al. in [this writing](https://www.lakernewhouse.com/assets/writing/faster-symmul-with-thunderkittens.pdf). However, they mention that their kernel "has incorrect behavior in the transpose-and-store step". We take the idea further and implement our own version of the kernel.
 
-The CUDA code was adapted from GEMM codes provided by [DD-DuDa](https://github.com/DD-DuDa) and the Muon code was adapted from [Jordan's implementation](https://github.com/KellerJordan/Muon/tree/master).
-
-## Limitations
-
-Currently the implementation is not compatible with cases where `x.size(1) % 8 != 0`, i.e., the reduction dimension must be a multiple of 8. The kernel is not faster for smaller matrices (e.g., `x.size(0) < 4096`) as these cases cannot exploit the benefit of early existing mechanism by thread blocks. 
+The [CUDA code](https://github.com/nil0x9/flash-muon/blob/cuda_dev/csrc/matmul_transpose.cu) was adapted from GEMM codes provided by [DD-DuDa](https://github.com/DD-DuDa) and the Muon code was adapted from [Jordan's implementation](https://github.com/KellerJordan/Muon/tree/master).
 
 
 ## Citation
