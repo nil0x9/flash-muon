@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from torch import Tensor
-from flash_muon_cuda import matmul_transpose_assign
+from .matmul_transpose_triton import matmul_transpose_assign
 
 def fast_newtonschulz(G: Tensor, steps: int) -> Tensor:
     """
