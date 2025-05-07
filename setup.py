@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "torch>=1.10.0",
-        "triton>=3.1.0"
+        # "torch>=2.5.0",
+        "triton>=3.2.0"
     ],
 )

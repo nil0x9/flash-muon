@@ -40,7 +40,7 @@ def mmt_kernel(
     group_size_m = min(num_pid_m - first_pid_m, GROUP_SIZE_M)
     pid_m = first_pid_m + ((pid % num_pid_in_group) % group_size_m)
     pid_n = (pid % num_pid_in_group) // group_size_m
-    if pid_m < pid_n:
+    if pid_m > pid_n:
         return
 
     offs_xm = (pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)) % M
@@ -69,7 +69,7 @@ def mmt_kernel(
     tl.store(c_ptrs, c, mask=c_mask)
 
     # transpose and copy
-    if pid_m > pid_n:
+    if pid_m < pid_n:
         ct_ptrs = y + stride_ym * offs_cn[:, None] + stride_yn * offs_cm[None, :]
         ct_mask = (offs_cn[:, None] < M) & (offs_cm[None, :] < M)
         tl.store(ct_ptrs, tl.permute(c, (1,0)), mask=ct_mask)
