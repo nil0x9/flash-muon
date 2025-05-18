@@ -9,7 +9,7 @@ def get_autotune_config():
                 for blk_k in [32, 64]
                 for grp_sz in [8]
                 for n_stages in [3, 4, 5]
-                for n_warps  in [2, 4, 8]
+                for n_warps  in [4, 8]
             ]
 
 @triton.autotune(
