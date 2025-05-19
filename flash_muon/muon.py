@@ -3,7 +3,7 @@ import torch.distributed as dist
 from torch import Tensor
 from .matmul_transpose_triton import matmul_transpose_assign
 
-def fast_newtonschulz(G: Tensor, steps: int) -> Tensor:
+def fast_newtonschulz(G: Tensor, steps: int=5) -> Tensor:
     """
     adapted from https://github.com/KellerJordan/Muon/blob/master/muon.py
     Arguments:
