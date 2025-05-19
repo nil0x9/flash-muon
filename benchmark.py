@@ -1,6 +1,20 @@
+import sys
 import time
 import torch
-from flash_muon import matmul_transpose, fast_newtonschulz
+try:
+    from flash_muon import matmul_transpose, fast_newtonschulz
+except ImportError as e:
+    print("Failed to import fast_newtonschulz from flash_muon. Please ensure the module is installed:")
+    print("\tgit clone https://github.com/nil0x9/flash-muon.git && pip install -e ./")
+    sys.exit(1)
+try:
+    import pandas as pd
+except ImportError as e:
+    print("This script requires pandas to run:\n\tpip install pandas")
+    sys.exit(1)
+pd.set_option('display.float_format',  '{:,.3f}'.format)
+    
+from collections import defaultdict
 
 # Baseline version
 def torch_matmul_transpose(G):
@@ -32,16 +46,15 @@ def torch_zeropower_via_newtonschulz5(G, steps=5):
         X = X.T
     return X
 
-def benchmark(name, baseline, impl):
+def benchmark(name, baseline, impl, warmup=25, rep=100):
     # Define dimensions to test
     dims = [1024, 2048, 4096, 8192]
     compiled = torch.compile(baseline)
     funcs = [impl, baseline, compiled]
-    loop = 16
     # Ensure we are on GPU
     print(f"\nbenchmark {name}:")
-    print("device\t\tdim\tflash(ms)\ttorch(ms)\tcompiled(ms)")
-    device_name = torch.cuda.get_device_name(torch.cuda.current_device()).split(' ')[-1]
+    benchmark_result = defaultdict(list)
+    device_name = torch.cuda.get_device_name(torch.cuda.current_device())
     start_event = torch.cuda.Event(enable_timing=True)
     end_event = torch.cuda.Event(enable_timing=True)
 
@@ -49,22 +62,23 @@ def benchmark(name, baseline, impl):
         # Create a random tensor of shape [dim, dim]
         tensor = torch.randn(dim, dim, device='cuda').bfloat16()
         
-        line = f'{device_name}\t{dim}\t'
-        for func in funcs:
+        benchmark_result['device'].append(device_name)
+        benchmark_result['dim'].append(dim)
+        for idx, func in enumerate(funcs):
             torch.cuda.empty_cache()
             # warmup
             func(tensor)
 
             start_event.record()
-            for _ in range(loop):
+            for _ in range(rep):
                 # Call the function
                 func(tensor)
             end_event.record()
             torch.cuda.synchronize()  # Wait for the events to complete
-            time_taken = start_event.elapsed_time(end_event)  # Time in milliseconds
-            line += f'{time_taken:.2f}\t\t'
+            time_taken = start_event.elapsed_time(end_event)/rep  # Time in milliseconds
+            benchmark_result[['flash(ms)','torch(ms)','compiled(ms)'][idx]].append(time_taken)
 
-        print(line)
+    print(pd.DataFrame(benchmark_result))
 
 # Run the benchmark
 if __name__ == "__main__":
