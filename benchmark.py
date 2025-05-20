@@ -5,7 +5,7 @@ try:
     from flash_muon import matmul_transpose, fast_newtonschulz
 except ImportError as e:
     print("Failed to import fast_newtonschulz from flash_muon. Please ensure the module is installed:")
-    print("\tgit clone https://github.com/nil0x9/flash-muon.git && pip install -e ./")
+    print("\tgit clone https://github.com/nil0x9/flash-muon.git && pip install -e flash-muon/")
     sys.exit(1)
 try:
     import pandas as pd
