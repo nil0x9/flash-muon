@@ -88,16 +88,17 @@ def matmul_transpose_assign(d_in, d_out):
     d_in = d_in.contiguous()
     M, K = d_in.shape
     grid = lambda META: (triton.cdiv(M, META['BLOCK_SIZE_M']) * triton.cdiv(M, META['BLOCK_SIZE_M']), )
-    mmt_kernel[grid](
-        d_in,
-        d_out,
-        M, 
-        K,
-        d_in.stride(0), 
-        d_in.stride(1),
-        d_out.stride(0), 
-        d_out.stride(1)
-    )
+    with torch.cuda.device(d_in.device.index):
+        mmt_kernel[grid](
+            d_in,
+            d_out,
+            M, 
+            K,
+            d_in.stride(0), 
+            d_in.stride(1),
+            d_out.stride(0), 
+            d_out.stride(1)
+        )
 
 def matmul_transpose(d_in):
     M, _ = d_in.shape
