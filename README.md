@@ -5,7 +5,7 @@ This repo implements an efficient version of Muon optimizer through a customized
 ## Installation
 
 ```sh
-git clone --recurse-submodules https://github.com/nil0x9/flash-muon.git
+git clone https://github.com/nil0x9/flash-muon.git
 
 pip install -e ./
 ```
