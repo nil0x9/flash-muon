@@ -65,10 +65,11 @@ def benchmark(name, baseline, impl, warmup=25, rep=100):
         benchmark_result['device'].append(device_name)
         benchmark_result['dim'].append(dim)
         for idx, func in enumerate(funcs):
-            torch.cuda.empty_cache()
             # warmup
-            func(tensor)
-
+            for _ in range(warmup):
+                func(tensor)
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
             start_event.record()
             for _ in range(rep):
                 # Call the function
