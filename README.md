@@ -4,6 +4,12 @@ This repo implements an efficient version of Muon optimizer through a customized
 
 ## Installation
 
+Requirements: 
+- `torch`
+- `triton`
+
+Run the following to install:
+
 ```sh
 git clone https://github.com/nil0x9/flash-muon.git
 
